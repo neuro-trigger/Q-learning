@@ -163,7 +163,7 @@ class Agent:
         for i in range(trials):
             self.trial()
 
-        show_metrics()
+        self.show_metrics()
 
     def show_metrics(self):
         """
@@ -173,7 +173,7 @@ class Agent:
 
         # Accumulated reward graph
         plt.figure("Accumulated Reward Graph")
-        plt.plot(trials, self.metric_accum_rewards, marker='o', color="blue")
+        plt.plot(trials, self.metric_accum_rewards, linestyle='-', marker='', color="blue")
         plt.xlabel("Trials")
         plt.ylabel("Accumulated Reward")
         plt.title("Accumulated Reward Evolution")
@@ -181,7 +181,7 @@ class Agent:
 
         # Cache hit rate graph
         plt.figure("Cache Hit Rate Graph")
-        plt.plot(trials, self.metric_hit_rates, marker='o', color="green")
+        plt.plot(trials, self.metric_hit_rates, linestyle='-', marker='', color="green")
         plt.xlabel("Trials")
         plt.ylabel("Cache Hit Rate")
         plt.title("Cache Hit Rate Evolution")
@@ -189,10 +189,10 @@ class Agent:
 
         # Mean Latency graph
         plt.figure("Mean Latency Graph")
-        plt.plot(trials, self.metric_mean_latencies, marker='o', color="red")
+        plt.plot(trials, self.metric_mean_latencies, linestyle='-', marker='', color="red")
         plt.xlabel("Trials")
         plt.ylabel("Mean Latency (ms)")
-        plt.title("Cache Hit Rate Evolution")
+        plt.title("Mean Latency Evolution")
         plt.show()
 
 
@@ -204,9 +204,9 @@ class Agent:
         requested_object = self.system_reference.get_client_request()
 
         #if requested_object in self.current_state:
-        reward = 0
-        hit = 1
-        latency = 10
+        reward = random.randint(-100, -1)
+        hit = random.randint(0, 1)
+        latency = random.randint(1, 100)
 
         self.updateMetrics(reward, hit, latency)
 
@@ -228,12 +228,12 @@ class Agent:
         self.trials_number += 1
 
         self.accum_reward += reward
-        self.accum_hit += hit
+        self.accum_hits += hit
         self.accum_latency += latency
         
         self.metric_accum_rewards[self.trials_number - 1] = self.accum_reward
-        self.metric_hit_rates[self.trials_number - 1] = self.hits / self.trials_number
-        self.metric_mean_latencie[self.trials_number - 1] = self.accum_latency / self.trials_number
+        self.metric_hit_rates[self.trials_number - 1] = self.accum_hits / self.trials_number
+        self.metric_mean_latencies[self.trials_number - 1] = self.accum_latency / self.trials_number
 
 
 class Test:
@@ -266,6 +266,8 @@ def main():
     print(agent)
     
     Test.get_client_request(system, 10000)
+
+    agent.train(1000)
 
 
 if __name__ == "__main__":
