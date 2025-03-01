@@ -69,7 +69,8 @@ class System:
 
     def get_client_request(self):
         """
-        Returns a random client request attending to the objects D.P
+        Returns a random client request (object id) 
+        attending to the objects D.P.
         """
         return random.choices(
                 range(self.objs_number), 
@@ -109,23 +110,13 @@ class Agent:
 
             learning_rate:
                 The learning rate for the Q-learning method.
-
-            metric_reward:
-                Accumulator of the reward. Performance metric.
-
-            metric_hit_rate:
-                Accumulator of the cache memory hit rate. Performance metric.
-
-            metric_mean_latency:
-                Accumulator of the mean latency of the server. Performance
-                metric.
     """
     def __init__(self, system_reference, discount_factor, cache_capacity):
         self.system_reference = system_reference
         self.q_dict = dict()
         self.discount_factor = discount_factor
         self.exploration_e = 1.0
-        self.trials = 0
+        self.trials_number = 0
         self.cache_capacity = cache_capacity
         # As initial state it fills the cache memory randomly
         self.current_state = set(
@@ -135,9 +126,13 @@ class Agent:
             )
         )
 
-        self.metric_reward = 0
-        self.metric_hit_rate = 0.0
-        self.metric_mean_latency = 0.0
+        self.accum_reward = 0
+        self.accum_hits = 0
+        self.accum_latency = 0
+
+        self.metric_accum_rewards = np.array([])
+        self.metric_hit_rates = np.array([])
+        self.metric_mean_latencies = np.array([])
 
     def __str__(self):
         return f"""Agent
@@ -145,14 +140,45 @@ class Agent:
     Discount factor (gamma): {self.discount_factor},
     Exploration epsilon: {self.exploration_e},
     Current state: {self.current_state},
-    Trials: {self.trials},
-
-    Reward metric: {self.metric_reward},
-    Hit rate metric: {self.metric_hit_rate},
-    Mean latency metric: {self.metric_mean_latency}
+    Trials: {self.trials_number},
 
 
     """
+
+    def trial(self):
+        requested_object = self.system_reference.get_client_request()
+
+        if requested_object in self.current_state:
+            reward = 0
+            hit = 1
+            latency = 0
+
+        self.updateMetrics(reward, hit, latency)
+
+    def updateMetrics(self, reward, hit, latency):
+        """
+        Updates metrics after every trial.
+
+        Parameters:
+
+            reward:
+                Reward obtained.
+
+            hit:
+                0 for miss and 1 for hit.
+
+            latency:
+                Latency for retrieving the requested object. 
+        """
+        self.trials_number += 1
+
+        self.accum_reward += reward
+        self.accum_hit += hit
+        self.accum_latency += latency
+        
+        self.metric_accum_rewards.append(self.accum_reward)
+        self.metric_hit_rates.append(self.hits / self.trials_number)
+        self.metric_mean_latencies.append(self.accum_latency / self.trials_number)
 
 
 class Test:
