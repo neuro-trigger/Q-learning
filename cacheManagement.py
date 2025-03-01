@@ -1,6 +1,6 @@
 import numpy as np
 import matplotlib.pyplot as plt
-import random
+import random, math
 
 class ProbGenerator:
     """
@@ -165,6 +165,7 @@ class Agent:
 
         self.show_metrics()
 
+
     def show_metrics(self):
         """
         Shows the metrics graphs.
@@ -203,14 +204,93 @@ class Agent:
         """
         requested_object = self.system_reference.get_client_request()
 
-        #if requested_object in self.current_state:
-        reward = random.randint(-100, -1)
-        hit = random.randint(0, 1)
-        latency = random.randint(1, 100)
+        if requested_object in self.current_state:
+            reward = 0
+            hit = 1
+            latency = 0
 
-        self.updateMetrics(reward, hit, latency)
+        else:
+            hit = 0
 
-    def updateMetrics(self, reward, hit, latency):
+            exploration = random.choices(
+                    [True, False], 
+                    weights=[self.exploration_e, 1 - self.exploration_e],
+                    k=1
+            )[0]
+
+            if(exploration):
+                # Decides to randomly explore
+                if(self.exploration_e > 0.1): self.exploration_e -= 0.0009
+                
+                action = random.choices(
+                        list(self.current_state), 
+                        k=1
+                )[0]
+
+                max_q_value = self.q_dict.get( (frozenset(self.current_state), action), 0)
+                if(max_q_value == 0): self.q_dict[(frozenset(self.current_state), action)] = 0
+
+            else:
+                # Determines the best action with base on the knowledge
+                max_q_value, action = self.search_max_q( frozenset(self.current_state) )
+
+            reward = - self.system_reference.get_obj_latency(action)
+            latency = self.system_reference.get_obj_latency(requested_object)
+
+            # Learns (Updates the Q-dictionary)
+            next_state = self.current_state
+            next_state.remove(action)
+            next_state.add(requested_object)
+
+            current_state_q_value = max_q_value
+            next_state_q_value = self.search_max_q( frozenset(next_state) )[0]
+
+            self.q_dict[(frozenset(self.current_state), action)] += self.get_learning_rate() * (
+                reward + 
+                self.discount_factor * next_state_q_value -
+                current_state_q_value
+            )
+
+        self.update_metrics(reward, hit, latency)
+    
+
+    def get_learning_rate(self):
+        """
+        Returns the learning rate, which depends on the number of trials.
+        """
+        return 100 / (100 + self.trials_number)
+
+    def search_max_q(self, state):
+        """
+        Determines the best Q-value for the current state.
+
+        Parameters:
+
+            state:
+                Current state of the cache memory.
+
+        Return values:
+
+            (max_q_value, action):
+                Corresponding to the best q_value and action
+                found.
+        """
+        max_q_value = float("-inf")
+        action = -1
+        
+        for current_action in state:
+            current_q_value = self.q_dict.get((state, current_action), 0)
+            if(current_q_value == 0): self.q_dict[(state, current_action)] = 0
+
+            if current_q_value > max_q_value:
+                action = current_action
+                max_q_value = current_q_value
+
+        return (max_q_value, action)
+
+
+
+    def update_metrics(self, reward, hit, latency):
         """
         Updates metrics after every trial.
 
