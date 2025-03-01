@@ -41,16 +41,20 @@ class System:
 
             objs_prob:
                 A list with the corresponding Zipf D.P for the objects.
+
+            objs_number:
+                Number of objects available.
     """
     def __init__(self, objs_list):
         self.objs_latency = [obj[1] for obj in objs_list]
         self.objs_prob = ProbGenerator.gen_zipf_prob(objs_list)
+        self.objs_number = len(self.objs_latency)
 
     def __str__(self) -> str:
         return f"System\n    Latencias = {self.objs_latency},\n    D.P = {self.objs_prob}\n\n"
 
     def get_objs_number(self) -> int:
-        return len(self.objs_latency)
+        return self.objs_number
     
     def get_obj_latency(self, id) -> int:
         """
@@ -62,6 +66,16 @@ class System:
                 Object identifier.
         """
         return self.objs_latency[id]
+
+    def get_client_request(self):
+        """
+        Returns a random client request attending to the objects D.P
+        """
+        return random.choices(
+                range(self.objs_number), 
+                weights=self.objs_prob,
+                k=1
+        )[0]
     
 
 class Agent:
@@ -139,7 +153,21 @@ class Agent:
 
 
     """
-    
+
+
+class Test:
+    """
+    Static methods for Testing.
+    """
+    @staticmethod
+    def get_client_request(system, trials):
+        frequencies = [0] * system.get_objs_number()
+
+        for i in range(trials):
+            frequencies[system.get_client_request()] += 1
+
+        print(frequencies)
+
 
 def main():
     random_seed = 33
@@ -155,6 +183,8 @@ def main():
 
     print(system)
     print(agent)
+    
+    Test.get_client_request(system, 10000)
 
 
 if __name__ == "__main__":
