@@ -1,4 +1,5 @@
 import numpy as np
+import matplotlib.pyplot as plt
 import random
 
 class ProbGenerator:
@@ -130,9 +131,10 @@ class Agent:
         self.accum_hits = 0
         self.accum_latency = 0
 
-        self.metric_accum_rewards = np.array([])
-        self.metric_hit_rates = np.array([])
-        self.metric_mean_latencies = np.array([])
+        self.metric_accum_rewards = np.zeros(1)
+        self.metric_hit_rates = np.zeros(1)
+        self.metric_mean_latencies = np.zeros(1)
+
 
     def __str__(self):
         return f"""Agent
@@ -145,13 +147,66 @@ class Agent:
 
     """
 
+    def train(self, trials):
+        """
+        Trains the agent and shows the graph for the metrics at the end.
+
+        Parameters:
+
+            trials:
+                Number of trials for the training.
+        """
+        self.metric_accum_rewards = np.empty(trials)
+        self.metric_hit_rates = np.empty(trials)
+        self.metric_mean_latencies = np.empty(trials)
+
+        for i in range(trials):
+            self.trial()
+
+        show_metrics()
+
+    def show_metrics(self):
+        """
+        Shows the metrics graphs.
+        """
+        trials = np.arange(self.trials_number)
+
+        # Accumulated reward graph
+        plt.figure("Accumulated Reward Graph")
+        plt.plot(trials, self.metric_accum_rewards, marker='o', color="blue")
+        plt.xlabel("Trials")
+        plt.ylabel("Accumulated Reward")
+        plt.title("Accumulated Reward Evolution")
+        plt.show()
+
+        # Cache hit rate graph
+        plt.figure("Cache Hit Rate Graph")
+        plt.plot(trials, self.metric_hit_rates, marker='o', color="green")
+        plt.xlabel("Trials")
+        plt.ylabel("Cache Hit Rate")
+        plt.title("Cache Hit Rate Evolution")
+        plt.show()
+
+        # Mean Latency graph
+        plt.figure("Mean Latency Graph")
+        plt.plot(trials, self.metric_mean_latencies, marker='o', color="red")
+        plt.xlabel("Trials")
+        plt.ylabel("Mean Latency (ms)")
+        plt.title("Cache Hit Rate Evolution")
+        plt.show()
+
+
     def trial(self):
+        """
+        Reproduces one trial for the agent, where it receives a request,
+        decides what to do and learns by the Q-learning method.
+        """
         requested_object = self.system_reference.get_client_request()
 
-        if requested_object in self.current_state:
-            reward = 0
-            hit = 1
-            latency = 0
+        #if requested_object in self.current_state:
+        reward = 0
+        hit = 1
+        latency = 10
 
         self.updateMetrics(reward, hit, latency)
 
@@ -176,9 +231,9 @@ class Agent:
         self.accum_hit += hit
         self.accum_latency += latency
         
-        self.metric_accum_rewards.append(self.accum_reward)
-        self.metric_hit_rates.append(self.hits / self.trials_number)
-        self.metric_mean_latencies.append(self.accum_latency / self.trials_number)
+        self.metric_accum_rewards[self.trials_number - 1] = self.accum_reward
+        self.metric_hit_rates[self.trials_number - 1] = self.hits / self.trials_number
+        self.metric_mean_latencie[self.trials_number - 1] = self.accum_latency / self.trials_number
 
 
 class Test:
